@@ -6,17 +6,21 @@ import { createInvoiceRecord, updateInvoiceRecord } from "./invoice-core"
 import { NotFoundError } from "../lib/errors"
 import type { InvoicePdfData } from "../lib/pdf/types"
 
-export function createInvoice(data: CreateInvoiceInput) {
+export async function createInvoice(data: CreateInvoiceInput) {
   if (!data.customerId && !data.newCustomer) {
     throw new Error("A customer must be selected or provided")
   }
 
-  return db.transaction((tx) => {
-    const customerId = data.customerId
-      ? data.customerId
-      : tx.insert(customers).values(data.newCustomer!).returning().get().id
+  return db.transaction(async (tx) => {
+    let customerId: string
+    if (data.customerId) {
+      customerId = data.customerId
+    } else {
+      customerId = crypto.randomUUID()
+      await tx.insert(customers).values({ id: customerId, ...data.newCustomer! })
+    }
 
-    const invoice = createInvoiceRecord(tx, {
+    const invoice = await createInvoiceRecord(tx, {
       customerId,
       lineItems: data.lineItems,
       discountNaira: data.discountNaira,
@@ -31,23 +35,27 @@ export function createInvoice(data: CreateInvoiceInput) {
 
 const EDITABLE_STATUSES = ["draft", "failed"] as const
 
-export function updateInvoice(id: string, data: CreateInvoiceInput) {
+export async function updateInvoice(id: string, data: CreateInvoiceInput) {
   if (!data.customerId && !data.newCustomer) {
     throw new Error("A customer must be selected or provided")
   }
 
-  return db.transaction((tx) => {
-    const existing = tx.select().from(invoices).where(eq(invoices.id, id)).get()
+  return db.transaction(async (tx) => {
+    const [existing] = await tx.select().from(invoices).where(eq(invoices.id, id))
     if (!existing) throw new NotFoundError()
     if (!EDITABLE_STATUSES.includes(existing.status as (typeof EDITABLE_STATUSES)[number])) {
       throw new Error(`An invoice that's already ${existing.status} can't be edited`)
     }
 
-    const customerId = data.customerId
-      ? data.customerId
-      : tx.insert(customers).values(data.newCustomer!).returning().get().id
+    let customerId: string
+    if (data.customerId) {
+      customerId = data.customerId
+    } else {
+      customerId = crypto.randomUUID()
+      await tx.insert(customers).values({ id: customerId, ...data.newCustomer! })
+    }
 
-    updateInvoiceRecord(tx, id, {
+    await updateInvoiceRecord(tx, id, {
       customerId,
       lineItems: data.lineItems,
       discountNaira: data.discountNaira,
@@ -60,26 +68,25 @@ export function updateInvoice(id: string, data: CreateInvoiceInput) {
   })
 }
 
-export function deleteInvoice(id: string) {
-  const invoice = db.select().from(invoices).where(eq(invoices.id, id)).get()
+export async function deleteInvoice(id: string) {
+  const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id))
   if (!invoice) throw new NotFoundError()
   if (invoice.status === "paid") {
     return { ok: false as const, reason: "paid" as const }
   }
-  db.delete(invoices).where(eq(invoices.id, id)).run()
+  await db.delete(invoices).where(eq(invoices.id, id))
   return { ok: true as const }
 }
 
-export function getInvoiceById(id: string): InvoicePdfData {
-  const invoice = db.select().from(invoices).where(eq(invoices.id, id)).get()
+export async function getInvoiceById(id: string): Promise<InvoicePdfData> {
+  const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id))
   if (!invoice) throw new NotFoundError()
 
-  const lineItems = db
+  const lineItems = await db
     .select()
     .from(invoiceLineItems)
     .where(eq(invoiceLineItems.invoiceId, id))
     .orderBy(invoiceLineItems.sortOrder)
-    .all()
 
   return {
     id: invoice.id,
@@ -112,7 +119,7 @@ export function getInvoiceById(id: string): InvoicePdfData {
   }
 }
 
-export function listInvoices() {
+export async function listInvoices() {
   return db
     .select({
       id: invoices.id,
@@ -125,5 +132,4 @@ export function listInvoices() {
     })
     .from(invoices)
     .orderBy(desc(invoices.createdAt))
-    .all()
 }

@@ -51,11 +51,11 @@ function businessAddressLine(profile: typeof businessProfile.$inferSelect) {
     .join(", ")
 }
 
-export function createInvoiceRecord(tx: Tx, input: CreateInvoiceRecordInput) {
-  const profile = tx.select().from(businessProfile).where(eq(businessProfile.id, 1)).get()
+export async function createInvoiceRecord(tx: Tx, input: CreateInvoiceRecordInput) {
+  const [profile] = await tx.select().from(businessProfile).where(eq(businessProfile.id, 1))
   if (!profile) throw new Error("Business profile has not been set up yet")
 
-  const customer = tx.select().from(customers).where(eq(customers.id, input.customerId)).get()
+  const [customer] = await tx.select().from(customers).where(eq(customers.id, input.customerId))
   if (!customer) throw new Error("Customer not found")
 
   const { lineItems, subtotalKobo, discountKobo, taxKobo, totalDueKobo } = computeLineItemsAndTotals(
@@ -65,48 +65,45 @@ export function createInvoiceRecord(tx: Tx, input: CreateInvoiceRecordInput) {
   )
 
   const invoiceNumber = `INV-${String(profile.nextInvoiceNumber).padStart(4, "0")}`
-  tx.update(businessProfile)
+  await tx
+    .update(businessProfile)
     .set({ nextInvoiceNumber: profile.nextInvoiceNumber + 1 })
     .where(eq(businessProfile.id, 1))
-    .run()
 
   const issueDate = new Date()
-  const invoice = tx
-    .insert(invoices)
-    .values({
-      invoiceNumber,
-      customerId: customer.id,
-      currency: profile.currency,
-      issueDate,
-      dueDate: input.dueDate,
-      comments: input.comments,
-      subtotalKobo,
-      discountKobo,
-      taxRatePercent: input.taxRatePercent,
-      taxKobo,
-      totalDueKobo,
-      billedToName: customer.name,
-      billedToEmail: customer.email,
-      businessNameSnapshot: profile.businessName,
-      businessAddressSnapshot: businessAddressLine(profile),
-      businessPhoneSnapshot: profile.phone,
-      payeeNameSnapshot: profile.payeeName,
-      bankNameSnapshot: profile.bankName,
-      accountNumberSnapshot: profile.accountNumber,
-      recurringInvoiceId: input.recurringInvoiceId,
-    })
-    .returning()
-    .get()
+  const id = crypto.randomUUID()
+  await tx.insert(invoices).values({
+    id,
+    invoiceNumber,
+    customerId: customer.id,
+    currency: profile.currency,
+    issueDate,
+    dueDate: input.dueDate,
+    comments: input.comments,
+    subtotalKobo,
+    discountKobo,
+    taxRatePercent: input.taxRatePercent,
+    taxKobo,
+    totalDueKobo,
+    billedToName: customer.name,
+    billedToEmail: customer.email,
+    businessNameSnapshot: profile.businessName,
+    businessAddressSnapshot: businessAddressLine(profile),
+    businessPhoneSnapshot: profile.phone,
+    payeeNameSnapshot: profile.payeeName,
+    bankNameSnapshot: profile.bankName,
+    accountNumberSnapshot: profile.accountNumber,
+    recurringInvoiceId: input.recurringInvoiceId,
+  })
+  const [invoice] = await tx.select().from(invoices).where(eq(invoices.id, id))
 
-  tx.insert(invoiceLineItems)
-    .values(
-      lineItems.map((item, index) => ({
-        ...item,
-        invoiceId: invoice.id,
-        sortOrder: index,
-      })),
-    )
-    .run()
+  await tx.insert(invoiceLineItems).values(
+    lineItems.map((item, index) => ({
+      ...item,
+      invoiceId: invoice.id,
+      sortOrder: index,
+    })),
+  )
 
   return invoice
 }
@@ -121,11 +118,11 @@ export interface UpdateInvoiceRecordInput {
 }
 
 /** Only for draft/failed invoices — re-snapshots business & customer details since nothing's been delivered yet. */
-export function updateInvoiceRecord(tx: Tx, invoiceId: string, input: UpdateInvoiceRecordInput) {
-  const profile = tx.select().from(businessProfile).where(eq(businessProfile.id, 1)).get()
+export async function updateInvoiceRecord(tx: Tx, invoiceId: string, input: UpdateInvoiceRecordInput) {
+  const [profile] = await tx.select().from(businessProfile).where(eq(businessProfile.id, 1))
   if (!profile) throw new Error("Business profile has not been set up yet")
 
-  const customer = tx.select().from(customers).where(eq(customers.id, input.customerId)).get()
+  const [customer] = await tx.select().from(customers).where(eq(customers.id, input.customerId))
   if (!customer) throw new Error("Customer not found")
 
   const { lineItems, subtotalKobo, discountKobo, taxKobo, totalDueKobo } = computeLineItemsAndTotals(
@@ -134,7 +131,7 @@ export function updateInvoiceRecord(tx: Tx, invoiceId: string, input: UpdateInvo
     input.taxRatePercent,
   )
 
-  const invoice = tx
+  await tx
     .update(invoices)
     .set({
       customerId: customer.id,
@@ -155,19 +152,16 @@ export function updateInvoiceRecord(tx: Tx, invoiceId: string, input: UpdateInvo
       accountNumberSnapshot: profile.accountNumber,
     })
     .where(eq(invoices.id, invoiceId))
-    .returning()
-    .get()
+  const [invoice] = await tx.select().from(invoices).where(eq(invoices.id, invoiceId))
 
-  tx.delete(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invoiceId)).run()
-  tx.insert(invoiceLineItems)
-    .values(
-      lineItems.map((item, index) => ({
-        ...item,
-        invoiceId,
-        sortOrder: index,
-      })),
-    )
-    .run()
+  await tx.delete(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invoiceId))
+  await tx.insert(invoiceLineItems).values(
+    lineItems.map((item, index) => ({
+      ...item,
+      invoiceId,
+      sortOrder: index,
+    })),
+  )
 
   return invoice
 }

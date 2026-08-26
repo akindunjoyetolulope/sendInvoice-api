@@ -1,1 +1,0 @@
-ALTER TABLE `recurring_invoices` ADD `due_in_days` integer DEFAULT 0 NOT NULL;

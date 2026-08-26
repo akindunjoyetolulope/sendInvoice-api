@@ -10,11 +10,11 @@ function effectiveStatus(status: string, dueDate: Date, now: Date): EffectiveSta
   return dueDate < now ? "overdue" : "pending"
 }
 
-export function getDashboardData() {
+export async function getDashboardData() {
   const now = new Date()
-  const businessProfile = getBusinessProfile()
-  const allInvoices = db.select().from(invoices).orderBy(desc(invoices.createdAt)).all()
-  const [{ customerCount }] = db.select({ customerCount: count() }).from(customers).all()
+  const businessProfile = await getBusinessProfile()
+  const allInvoices = await db.select().from(invoices).orderBy(desc(invoices.createdAt))
+  const [{ customerCount }] = await db.select({ customerCount: count() }).from(customers)
 
   let totalRevenueKobo = 0
   let paidCount = 0

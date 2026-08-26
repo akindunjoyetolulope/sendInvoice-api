@@ -17,7 +17,7 @@ import { dashboardRoutes } from "./routes/dashboard"
 if (!process.env.GOOGLE_CLIENT_ID) throw new Error("GOOGLE_CLIENT_ID is not set")
 if (!process.env.SESSION_SECRET) throw new Error("SESSION_SECRET is not set")
 
-runMigrations()
+await runMigrations()
 startScheduler()
 
 const app = new Hono()

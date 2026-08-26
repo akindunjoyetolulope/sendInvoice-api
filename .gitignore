@@ -2,7 +2,6 @@ node_modules
 dist
 *.local
 .env*
-data/*.db*
 
 # typescript
 *.tsbuildinfo

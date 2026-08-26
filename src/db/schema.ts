@@ -1,100 +1,100 @@
-import { relations, sql } from "drizzle-orm"
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core"
+import { relations } from "drizzle-orm"
+import { bigint, boolean, datetime, double, int, mysqlEnum, mysqlTable, text, varchar } from "drizzle-orm/mysql-core"
 
-export const businessProfile = sqliteTable("business_profile", {
-  id: integer("id").primaryKey().default(1),
-  businessName: text("business_name").notNull().default(""),
-  email: text("email").notNull().default(""),
-  phone: text("phone").notNull().default(""),
-  addressLine1: text("address_line1").notNull().default(""),
-  addressLine2: text("address_line2"),
-  city: text("city").notNull().default(""),
-  state: text("state").notNull().default(""),
-  country: text("country").notNull().default(""),
-  payeeName: text("payee_name").notNull().default(""),
-  bankName: text("bank_name").notNull().default(""),
-  accountNumber: text("account_number").notNull().default(""),
-  currency: text("currency").notNull().default("NGN"),
-  nextInvoiceNumber: integer("next_invoice_number").notNull().default(1),
-  createdAt: integer("created_at", { mode: "timestamp" })
+export const businessProfile = mysqlTable("business_profile", {
+  id: int("id").primaryKey().default(1),
+  businessName: varchar("business_name", { length: 255 }).notNull().default(""),
+  email: varchar("email", { length: 255 }).notNull().default(""),
+  phone: varchar("phone", { length: 50 }).notNull().default(""),
+  addressLine1: varchar("address_line1", { length: 255 }).notNull().default(""),
+  addressLine2: varchar("address_line2", { length: 255 }),
+  city: varchar("city", { length: 120 }).notNull().default(""),
+  state: varchar("state", { length: 120 }).notNull().default(""),
+  country: varchar("country", { length: 120 }).notNull().default(""),
+  payeeName: varchar("payee_name", { length: 255 }).notNull().default(""),
+  bankName: varchar("bank_name", { length: 255 }).notNull().default(""),
+  accountNumber: varchar("account_number", { length: 64 }).notNull().default(""),
+  currency: varchar("currency", { length: 8 }).notNull().default("NGN"),
+  nextInvoiceNumber: int("next_invoice_number").notNull().default(1),
+  createdAt: datetime("created_at", { mode: "date" })
     .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date()),
+  updatedAt: datetime("updated_at", { mode: "date" })
     .notNull()
-    .default(sql`(unixepoch())`)
+    .$defaultFn(() => new Date())
     .$onUpdate(() => new Date()),
 })
 
-export const customers = sqliteTable("customers", {
-  id: text("id")
+export const customers = mysqlTable("customers", {
+  id: varchar("id", { length: 36 })
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  name: text("name").notNull(),
-  company: text("company"),
-  email: text("email").notNull(),
-  phone: text("phone"),
+  name: varchar("name", { length: 255 }).notNull(),
+  company: varchar("company", { length: 255 }),
+  email: varchar("email", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }),
   billingAddress: text("billing_address"),
   shippingAddress: text("shipping_address"),
-  taxId: text("tax_id"),
+  taxId: varchar("tax_id", { length: 100 }),
   notes: text("notes"),
-  archivedAt: integer("archived_at", { mode: "timestamp" }),
-  createdAt: integer("created_at", { mode: "timestamp" })
+  archivedAt: datetime("archived_at", { mode: "date" }),
+  createdAt: datetime("created_at", { mode: "date" })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .$defaultFn(() => new Date()),
 })
 
 export const invoiceStatusValues = ["draft", "sent", "paid", "overdue", "failed"] as const
 export type InvoiceStatus = (typeof invoiceStatusValues)[number]
 
-export const invoices = sqliteTable("invoices", {
-  id: text("id")
+export const invoices = mysqlTable("invoices", {
+  id: varchar("id", { length: 36 })
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  invoiceNumber: text("invoice_number").notNull().unique(),
-  customerId: text("customer_id")
+  invoiceNumber: varchar("invoice_number", { length: 64 }).notNull().unique(),
+  customerId: varchar("customer_id", { length: 36 })
     .notNull()
     .references(() => customers.id, { onDelete: "restrict" }),
-  status: text("status", { enum: invoiceStatusValues }).notNull().default("draft"),
-  currency: text("currency").notNull(),
-  issueDate: integer("issue_date", { mode: "timestamp" }).notNull(),
-  dueDate: integer("due_date", { mode: "timestamp" }).notNull(),
+  status: mysqlEnum("status", invoiceStatusValues).notNull().default("draft"),
+  currency: varchar("currency", { length: 8 }).notNull(),
+  issueDate: datetime("issue_date", { mode: "date" }).notNull(),
+  dueDate: datetime("due_date", { mode: "date" }).notNull(),
   comments: text("comments"),
-  subtotalKobo: integer("subtotal_kobo").notNull(),
-  discountKobo: integer("discount_kobo").notNull().default(0),
-  taxRatePercent: real("tax_rate_percent").notNull().default(0),
-  taxKobo: integer("tax_kobo").notNull().default(0),
-  totalDueKobo: integer("total_due_kobo").notNull(),
+  subtotalKobo: bigint("subtotal_kobo", { mode: "number" }).notNull(),
+  discountKobo: bigint("discount_kobo", { mode: "number" }).notNull().default(0),
+  taxRatePercent: double("tax_rate_percent").notNull().default(0),
+  taxKobo: bigint("tax_kobo", { mode: "number" }).notNull().default(0),
+  totalDueKobo: bigint("total_due_kobo", { mode: "number" }).notNull(),
   // Snapshots so past invoices don't change if the business profile or customer is edited later.
-  billedToName: text("billed_to_name").notNull(),
-  billedToEmail: text("billed_to_email").notNull(),
-  businessNameSnapshot: text("business_name_snapshot").notNull(),
+  billedToName: varchar("billed_to_name", { length: 255 }).notNull(),
+  billedToEmail: varchar("billed_to_email", { length: 255 }).notNull(),
+  businessNameSnapshot: varchar("business_name_snapshot", { length: 255 }).notNull(),
   businessAddressSnapshot: text("business_address_snapshot").notNull(),
-  businessPhoneSnapshot: text("business_phone_snapshot").notNull(),
-  payeeNameSnapshot: text("payee_name_snapshot").notNull(),
-  bankNameSnapshot: text("bank_name_snapshot").notNull(),
-  accountNumberSnapshot: text("account_number_snapshot").notNull(),
-  recurringInvoiceId: text("recurring_invoice_id").references(() => recurringInvoices.id, {
+  businessPhoneSnapshot: varchar("business_phone_snapshot", { length: 50 }).notNull(),
+  payeeNameSnapshot: varchar("payee_name_snapshot", { length: 255 }).notNull(),
+  bankNameSnapshot: varchar("bank_name_snapshot", { length: 255 }).notNull(),
+  accountNumberSnapshot: varchar("account_number_snapshot", { length: 64 }).notNull(),
+  recurringInvoiceId: varchar("recurring_invoice_id", { length: 36 }).references(() => recurringInvoices.id, {
     onDelete: "set null",
   }),
-  createdAt: integer("created_at", { mode: "timestamp" })
+  createdAt: datetime("created_at", { mode: "date" })
     .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date()),
+  updatedAt: datetime("updated_at", { mode: "date" })
     .notNull()
-    .default(sql`(unixepoch())`)
+    .$defaultFn(() => new Date())
     .$onUpdate(() => new Date()),
 })
 
-export const invoiceLineItems = sqliteTable("invoice_line_items", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  invoiceId: text("invoice_id")
+export const invoiceLineItems = mysqlTable("invoice_line_items", {
+  id: int("id").autoincrement().primaryKey(),
+  invoiceId: varchar("invoice_id", { length: 36 })
     .notNull()
     .references(() => invoices.id, { onDelete: "cascade" }),
   description: text("description").notNull(),
-  quantity: real("quantity").notNull(),
-  rateKobo: integer("rate_kobo").notNull(),
-  lineTotalKobo: integer("line_total_kobo").notNull(),
-  sortOrder: integer("sort_order").notNull().default(0),
+  quantity: double("quantity").notNull(),
+  rateKobo: bigint("rate_kobo", { mode: "number" }).notNull(),
+  lineTotalKobo: bigint("line_total_kobo", { mode: "number" }).notNull(),
+  sortOrder: int("sort_order").notNull().default(0),
 })
 
 export const recurringFrequencyValues = [
@@ -111,65 +111,65 @@ export type RecurringFrequency = (typeof recurringFrequencyValues)[number]
 export const recurringStatusValues = ["active", "paused", "ended"] as const
 export type RecurringStatus = (typeof recurringStatusValues)[number]
 
-export const recurringInvoices = sqliteTable("recurring_invoices", {
-  id: text("id")
+export const recurringInvoices = mysqlTable("recurring_invoices", {
+  id: varchar("id", { length: 36 })
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  customerId: text("customer_id")
+  customerId: varchar("customer_id", { length: 36 })
     .notNull()
     .references(() => customers.id, { onDelete: "restrict" }),
-  discountKobo: integer("discount_kobo").notNull().default(0),
-  taxRatePercent: real("tax_rate_percent").notNull().default(0),
+  discountKobo: bigint("discount_kobo", { mode: "number" }).notNull().default(0),
+  taxRatePercent: double("tax_rate_percent").notNull().default(0),
   comments: text("comments"),
-  frequency: text("frequency", { enum: recurringFrequencyValues }).notNull(),
-  customIntervalDays: integer("custom_interval_days"),
-  dueInDays: integer("due_in_days").notNull().default(0),
-  startDate: integer("start_date", { mode: "timestamp" }).notNull(),
-  endDate: integer("end_date", { mode: "timestamp" }),
-  timezone: text("timezone").notNull().default("UTC"),
-  autoSendEmail: integer("auto_send_email", { mode: "boolean" }).notNull().default(true),
-  autoGeneratePdf: integer("auto_generate_pdf", { mode: "boolean" }).notNull().default(true),
-  status: text("status", { enum: recurringStatusValues }).notNull().default("active"),
-  nextRunAt: integer("next_run_at", { mode: "timestamp" }).notNull(),
-  lastRunAt: integer("last_run_at", { mode: "timestamp" }),
-  attemptCount: integer("attempt_count").notNull().default(0),
-  occurrenceCount: integer("occurrence_count").notNull().default(0),
-  createdAt: integer("created_at", { mode: "timestamp" })
+  frequency: mysqlEnum("frequency", recurringFrequencyValues).notNull(),
+  customIntervalDays: int("custom_interval_days"),
+  dueInDays: int("due_in_days").notNull().default(0),
+  startDate: datetime("start_date", { mode: "date" }).notNull(),
+  endDate: datetime("end_date", { mode: "date" }),
+  timezone: varchar("timezone", { length: 64 }).notNull().default("UTC"),
+  autoSendEmail: boolean("auto_send_email").notNull().default(true),
+  autoGeneratePdf: boolean("auto_generate_pdf").notNull().default(true),
+  status: mysqlEnum("status", recurringStatusValues).notNull().default("active"),
+  nextRunAt: datetime("next_run_at", { mode: "date" }).notNull(),
+  lastRunAt: datetime("last_run_at", { mode: "date" }),
+  attemptCount: int("attempt_count").notNull().default(0),
+  occurrenceCount: int("occurrence_count").notNull().default(0),
+  createdAt: datetime("created_at", { mode: "date" })
     .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date()),
+  updatedAt: datetime("updated_at", { mode: "date" })
     .notNull()
-    .default(sql`(unixepoch())`)
+    .$defaultFn(() => new Date())
     .$onUpdate(() => new Date()),
 })
 
-export const recurringInvoiceLineItems = sqliteTable("recurring_invoice_line_items", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  recurringInvoiceId: text("recurring_invoice_id")
+export const recurringInvoiceLineItems = mysqlTable("recurring_invoice_line_items", {
+  id: int("id").autoincrement().primaryKey(),
+  recurringInvoiceId: varchar("recurring_invoice_id", { length: 36 })
     .notNull()
     .references(() => recurringInvoices.id, { onDelete: "cascade" }),
   description: text("description").notNull(),
-  quantity: real("quantity").notNull(),
-  rateKobo: integer("rate_kobo").notNull(),
-  sortOrder: integer("sort_order").notNull().default(0),
+  quantity: double("quantity").notNull(),
+  rateKobo: bigint("rate_kobo", { mode: "number" }).notNull(),
+  sortOrder: int("sort_order").notNull().default(0),
 })
 
 export const runLogStatusValues = ["success", "failed"] as const
 export const runLogStageValues = ["invoice", "pdf", "email"] as const
 
-export const invoiceRunLogs = sqliteTable("invoice_run_logs", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  recurringInvoiceId: text("recurring_invoice_id")
+export const invoiceRunLogs = mysqlTable("invoice_run_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  recurringInvoiceId: varchar("recurring_invoice_id", { length: 36 })
     .notNull()
     .references(() => recurringInvoices.id, { onDelete: "cascade" }),
-  invoiceId: text("invoice_id").references(() => invoices.id, { onDelete: "set null" }),
-  runAt: integer("run_at", { mode: "timestamp" })
+  invoiceId: varchar("invoice_id", { length: 36 }).references(() => invoices.id, { onDelete: "set null" }),
+  runAt: datetime("run_at", { mode: "date" })
     .notNull()
-    .default(sql`(unixepoch())`),
-  status: text("status", { enum: runLogStatusValues }).notNull(),
-  stage: text("stage", { enum: runLogStageValues }).notNull(),
+    .$defaultFn(() => new Date()),
+  status: mysqlEnum("status", runLogStatusValues).notNull(),
+  stage: mysqlEnum("stage", runLogStageValues).notNull(),
   errorMessage: text("error_message"),
-  attempt: integer("attempt").notNull().default(1),
+  attempt: int("attempt").notNull().default(1),
 })
 
 export const customersRelations = relations(customers, ({ many }) => ({

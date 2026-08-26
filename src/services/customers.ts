@@ -4,11 +4,11 @@ import { customers, invoices } from "../db/schema"
 import type { CustomerInput } from "../validation/invoice"
 import { NotFoundError } from "../lib/errors"
 
-export function listCustomers() {
-  return db.select().from(customers).where(isNull(customers.archivedAt)).orderBy(asc(customers.name)).all()
+export async function listCustomers() {
+  return db.select().from(customers).where(isNull(customers.archivedAt)).orderBy(asc(customers.name))
 }
 
-export function searchCustomers(data: { query?: string; includeArchived?: boolean }) {
+export async function searchCustomers(data: { query?: string; includeArchived?: boolean }) {
   const conditions = []
   if (data.query) {
     const term = `%${data.query}%`
@@ -23,42 +23,45 @@ export function searchCustomers(data: { query?: string; includeArchived?: boolea
     .from(customers)
     .where(and(...conditions))
     .orderBy(asc(customers.name))
-    .all()
 }
 
-export function getCustomerById(id: string) {
-  const customer = db.select().from(customers).where(eq(customers.id, id)).get()
+export async function getCustomerById(id: string) {
+  const [customer] = await db.select().from(customers).where(eq(customers.id, id))
   if (!customer) throw new NotFoundError()
   return customer
 }
 
-export function createCustomer(data: CustomerInput) {
-  return db.insert(customers).values(data).returning().get()
+export async function createCustomer(data: CustomerInput) {
+  const id = crypto.randomUUID()
+  await db.insert(customers).values({ id, ...data })
+  return getCustomerById(id)
 }
 
-export function updateCustomer(id: string, data: CustomerInput) {
-  return db.update(customers).set(data).where(eq(customers.id, id)).returning().get()
+export async function updateCustomer(id: string, data: CustomerInput) {
+  await db.update(customers).set(data).where(eq(customers.id, id))
+  return getCustomerById(id)
 }
 
-export function archiveCustomer(id: string) {
-  return db.update(customers).set({ archivedAt: new Date() }).where(eq(customers.id, id)).returning().get()
+export async function archiveCustomer(id: string) {
+  await db.update(customers).set({ archivedAt: new Date() }).where(eq(customers.id, id))
+  return getCustomerById(id)
 }
 
-export function unarchiveCustomer(id: string) {
-  return db.update(customers).set({ archivedAt: null }).where(eq(customers.id, id)).returning().get()
+export async function unarchiveCustomer(id: string) {
+  await db.update(customers).set({ archivedAt: null }).where(eq(customers.id, id))
+  return getCustomerById(id)
 }
 
-export function deleteCustomer(id: string) {
-  const [{ invoiceCount }] = db
+export async function deleteCustomer(id: string) {
+  const [{ invoiceCount }] = await db
     .select({ invoiceCount: count() })
     .from(invoices)
     .where(eq(invoices.customerId, id))
-    .all()
 
   if (invoiceCount > 0) {
     return { ok: false as const, invoiceCount }
   }
 
-  db.delete(customers).where(eq(customers.id, id)).run()
+  await db.delete(customers).where(eq(customers.id, id))
   return { ok: true as const }
 }

@@ -8,7 +8,7 @@ import { formatInvoiceTitle } from "../lib/pdf/format"
 import { InvoicePdfDocument } from "../pdf/invoice-pdf-document"
 
 export async function renderInvoicePdfBuffer(invoiceId: string) {
-  const data = getInvoiceById(invoiceId)
+  const data = await getInvoiceById(invoiceId)
   const pdfBuffer = await renderToBuffer(InvoicePdfDocument({ data }))
   return { data, pdfBuffer }
 }
@@ -46,13 +46,13 @@ export async function sendInvoiceEmailNow({
     })
   } catch (error) {
     if (data.status !== "paid") {
-      db.update(invoices).set({ status: "failed" }).where(eq(invoices.id, invoiceId)).run()
+      await db.update(invoices).set({ status: "failed" }).where(eq(invoices.id, invoiceId))
     }
     throw error
   }
 
   if (data.status !== "paid") {
     const nextStatus = data.dueDate < new Date() ? "overdue" : "sent"
-    db.update(invoices).set({ status: nextStatus }).where(eq(invoices.id, invoiceId)).run()
+    await db.update(invoices).set({ status: nextStatus }).where(eq(invoices.id, invoiceId))
   }
 }

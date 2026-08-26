@@ -6,7 +6,7 @@ import { createInvoiceSchema } from "../validation/invoice"
 
 export const invoiceRoutes = new Hono()
 
-invoiceRoutes.get("/", (c) => c.json(listInvoices()))
+invoiceRoutes.get("/", async (c) => c.json(await listInvoices()))
 
 invoiceRoutes.get("/:id/pdf-preview", async (c) => c.json(await getInvoicePdfPreview(c.req.param("id"))))
 
@@ -22,16 +22,16 @@ invoiceRoutes.post("/:id/send", async (c) => {
   return c.body(null, 204)
 })
 
-invoiceRoutes.get("/:id", (c) => c.json(getInvoiceById(c.req.param("id"))))
+invoiceRoutes.get("/:id", async (c) => c.json(await getInvoiceById(c.req.param("id"))))
 
 invoiceRoutes.post("/", async (c) => {
   const body = createInvoiceSchema.parse(await c.req.json())
-  return c.json(createInvoice(body), 201)
+  return c.json(await createInvoice(body), 201)
 })
 
 invoiceRoutes.put("/:id", async (c) => {
   const body = createInvoiceSchema.parse(await c.req.json())
-  return c.json(updateInvoice(c.req.param("id"), body))
+  return c.json(await updateInvoice(c.req.param("id"), body))
 })
 
-invoiceRoutes.delete("/:id", (c) => c.json(deleteInvoice(c.req.param("id"))))
+invoiceRoutes.delete("/:id", async (c) => c.json(await deleteInvoice(c.req.param("id"))))

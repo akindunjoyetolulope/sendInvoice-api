@@ -8,11 +8,9 @@ export function startScheduler() {
       console.error("[scheduler] processDueRecurringInvoices failed:", error)
     })
 
-    try {
-      sweepOverdueInvoices()
-    } catch (error) {
+    sweepOverdueInvoices().catch((error) => {
       console.error("[scheduler] sweepOverdueInvoices failed:", error)
-    }
+    })
   })
   console.log("[scheduler] recurring invoice scheduler started")
 }

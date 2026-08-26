@@ -1,19 +1,14 @@
-import Database from "better-sqlite3"
-import { drizzle } from "drizzle-orm/better-sqlite3"
-import { migrate } from "drizzle-orm/better-sqlite3/migrator"
-import { mkdirSync } from "node:fs"
-import { dirname } from "node:path"
+import mysql from "mysql2/promise"
+import { drizzle } from "drizzle-orm/mysql2"
+import { migrate } from "drizzle-orm/mysql2/migrator"
 import * as schema from "./schema"
 
-const dbUrl = (process.env.DATABASE_URL ?? "file:./data/sendinvoice.db").replace(/^file:/, "")
-mkdirSync(dirname(dbUrl), { recursive: true })
+if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set")
 
-const sqlite = new Database(dbUrl)
-sqlite.pragma("journal_mode = WAL")
-sqlite.pragma("foreign_keys = ON")
+const pool = mysql.createPool(process.env.DATABASE_URL)
 
-export const db = drizzle(sqlite, { schema })
+export const db = drizzle(pool, { schema, mode: "default" })
 
-export function runMigrations() {
-  migrate(db, { migrationsFolder: "./drizzle" })
+export async function runMigrations() {
+  await migrate(db, { migrationsFolder: "./drizzle" })
 }

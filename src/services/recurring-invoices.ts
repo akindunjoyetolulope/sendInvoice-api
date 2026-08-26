@@ -6,45 +6,41 @@ import { toKobo } from "../lib/format/money"
 import { runRecurringInvoiceOccurrence } from "./recurring-jobs"
 import { NotFoundError } from "../lib/errors"
 
-export function createRecurringInvoice(data: CreateRecurringInvoiceInput) {
-  return db.transaction((tx) => {
-    const recurringInvoice = tx
-      .insert(recurringInvoices)
-      .values({
-        customerId: data.customerId,
-        discountKobo: toKobo(data.discountNaira),
-        taxRatePercent: data.taxRatePercent,
-        comments: data.comments,
-        frequency: data.frequency,
-        customIntervalDays: data.customIntervalDays,
-        dueInDays: data.dueInDays,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        timezone: data.timezone,
-        autoSendEmail: data.autoSendEmail,
-        autoGeneratePdf: data.autoGeneratePdf || data.autoSendEmail,
-        nextRunAt: data.startDate,
-      })
-      .returning()
-      .get()
+export async function createRecurringInvoice(data: CreateRecurringInvoiceInput) {
+  return db.transaction(async (tx) => {
+    const id = crypto.randomUUID()
+    await tx.insert(recurringInvoices).values({
+      id,
+      customerId: data.customerId,
+      discountKobo: toKobo(data.discountNaira),
+      taxRatePercent: data.taxRatePercent,
+      comments: data.comments,
+      frequency: data.frequency,
+      customIntervalDays: data.customIntervalDays,
+      dueInDays: data.dueInDays,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      timezone: data.timezone,
+      autoSendEmail: data.autoSendEmail,
+      autoGeneratePdf: data.autoGeneratePdf || data.autoSendEmail,
+      nextRunAt: data.startDate,
+    })
 
-    tx.insert(recurringInvoiceLineItems)
-      .values(
-        data.lineItems.map((item, index) => ({
-          recurringInvoiceId: recurringInvoice.id,
-          description: item.description,
-          quantity: item.quantity,
-          rateKobo: toKobo(item.rate),
-          sortOrder: index,
-        })),
-      )
-      .run()
+    await tx.insert(recurringInvoiceLineItems).values(
+      data.lineItems.map((item, index) => ({
+        recurringInvoiceId: id,
+        description: item.description,
+        quantity: item.quantity,
+        rateKobo: toKobo(item.rate),
+        sortOrder: index,
+      })),
+    )
 
-    return { id: recurringInvoice.id }
+    return { id }
   })
 }
 
-export function listRecurringInvoices() {
+export async function listRecurringInvoices() {
   return db
     .select({
       id: recurringInvoices.id,
@@ -56,64 +52,54 @@ export function listRecurringInvoices() {
     })
     .from(recurringInvoices)
     .orderBy(desc(recurringInvoices.createdAt))
-    .all()
 }
 
-export function getRecurringInvoiceById(id: string) {
-  const recurringInvoice = db.select().from(recurringInvoices).where(eq(recurringInvoices.id, id)).get()
+export async function getRecurringInvoiceById(id: string) {
+  const [recurringInvoice] = await db.select().from(recurringInvoices).where(eq(recurringInvoices.id, id))
   if (!recurringInvoice) throw new NotFoundError()
 
-  const lineItems = db
+  const lineItems = await db
     .select()
     .from(recurringInvoiceLineItems)
     .where(eq(recurringInvoiceLineItems.recurringInvoiceId, id))
     .orderBy(recurringInvoiceLineItems.sortOrder)
-    .all()
 
-  const runLogs = db
+  const runLogs = await db
     .select()
     .from(invoiceRunLogs)
     .where(eq(invoiceRunLogs.recurringInvoiceId, id))
     .orderBy(desc(invoiceRunLogs.runAt))
-    .all()
 
   return { ...recurringInvoice, lineItems, runLogs }
 }
 
-export function pauseRecurringInvoice(id: string) {
-  return db
-    .update(recurringInvoices)
-    .set({ status: "paused" })
-    .where(eq(recurringInvoices.id, id))
-    .returning()
-    .get()
+async function setRecurringInvoiceStatus(id: string, status: "active" | "paused" | "ended") {
+  await db.update(recurringInvoices).set({ status }).where(eq(recurringInvoices.id, id))
+  const [row] = await db.select().from(recurringInvoices).where(eq(recurringInvoices.id, id))
+  if (!row) throw new NotFoundError()
+  return row
 }
 
-export function resumeRecurringInvoice(id: string) {
-  return db
-    .update(recurringInvoices)
-    .set({ status: "active" })
-    .where(eq(recurringInvoices.id, id))
-    .returning()
-    .get()
+export async function pauseRecurringInvoice(id: string) {
+  return setRecurringInvoiceStatus(id, "paused")
 }
 
-export function endRecurringInvoice(id: string) {
-  return db
-    .update(recurringInvoices)
-    .set({ status: "ended" })
-    .where(eq(recurringInvoices.id, id))
-    .returning()
-    .get()
+export async function resumeRecurringInvoice(id: string) {
+  return setRecurringInvoiceStatus(id, "active")
+}
+
+export async function endRecurringInvoice(id: string) {
+  return setRecurringInvoiceStatus(id, "ended")
 }
 
 export async function runRecurringInvoiceNow(id: string) {
   await runRecurringInvoiceOccurrence(id)
 }
 
-export function updateRecurringInvoice(id: string, data: CreateRecurringInvoiceInput) {
-  return db.transaction((tx) => {
-    tx.update(recurringInvoices)
+export async function updateRecurringInvoice(id: string, data: CreateRecurringInvoiceInput) {
+  return db.transaction(async (tx) => {
+    await tx
+      .update(recurringInvoices)
       .set({
         customerId: data.customerId,
         discountKobo: toKobo(data.discountNaira),
@@ -129,20 +115,17 @@ export function updateRecurringInvoice(id: string, data: CreateRecurringInvoiceI
         autoGeneratePdf: data.autoGeneratePdf || data.autoSendEmail,
       })
       .where(eq(recurringInvoices.id, id))
-      .run()
 
-    tx.delete(recurringInvoiceLineItems).where(eq(recurringInvoiceLineItems.recurringInvoiceId, id)).run()
-    tx.insert(recurringInvoiceLineItems)
-      .values(
-        data.lineItems.map((item, index) => ({
-          recurringInvoiceId: id,
-          description: item.description,
-          quantity: item.quantity,
-          rateKobo: toKobo(item.rate),
-          sortOrder: index,
-        })),
-      )
-      .run()
+    await tx.delete(recurringInvoiceLineItems).where(eq(recurringInvoiceLineItems.recurringInvoiceId, id))
+    await tx.insert(recurringInvoiceLineItems).values(
+      data.lineItems.map((item, index) => ({
+        recurringInvoiceId: id,
+        description: item.description,
+        quantity: item.quantity,
+        rateKobo: toKobo(item.rate),
+        sortOrder: index,
+      })),
+    )
 
     return { id }
   })

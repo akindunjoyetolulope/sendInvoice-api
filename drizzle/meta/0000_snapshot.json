@@ -1,7 +1,7 @@
 {
-  "version": "6",
-  "dialect": "sqlite",
-  "id": "ecb5691f-407c-4fa4-b764-98fad589c73b",
+  "version": "5",
+  "dialect": "mysql",
+  "id": "7acccf9c-82f2-492a-856b-f7131cc4bd6f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "business_profile": {
@@ -9,15 +9,15 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": 1
         },
         "business_name": {
           "name": "business_name",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -25,7 +25,7 @@
         },
         "email": {
           "name": "email",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -33,7 +33,7 @@
         },
         "phone": {
           "name": "phone",
-          "type": "text",
+          "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -41,7 +41,7 @@
         },
         "address_line1": {
           "name": "address_line1",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -49,14 +49,14 @@
         },
         "address_line2": {
           "name": "address_line2",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "city": {
           "name": "city",
-          "type": "text",
+          "type": "varchar(120)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -64,7 +64,7 @@
         },
         "state": {
           "name": "state",
-          "type": "text",
+          "type": "varchar(120)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -72,7 +72,7 @@
         },
         "country": {
           "name": "country",
-          "type": "text",
+          "type": "varchar(120)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -80,7 +80,7 @@
         },
         "payee_name": {
           "name": "payee_name",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -88,7 +88,7 @@
         },
         "bank_name": {
           "name": "bank_name",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -96,7 +96,7 @@
         },
         "account_number": {
           "name": "account_number",
-          "type": "text",
+          "type": "varchar(64)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -104,7 +104,7 @@
         },
         "currency": {
           "name": "currency",
-          "type": "text",
+          "type": "varchar(8)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -112,7 +112,7 @@
         },
         "next_invoice_number": {
           "name": "next_invoice_number",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -120,61 +120,66 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "integer",
+          "type": "datetime",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "(unixepoch())"
+          "autoincrement": false
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "integer",
+          "type": "datetime",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "(unixepoch())"
+          "autoincrement": false
         }
       },
       "indexes": {},
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "business_profile_id": {
+          "name": "business_profile_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraint": {}
     },
     "customers": {
       "name": "customers",
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
-          "primaryKey": true,
+          "type": "varchar(36)",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "name": {
           "name": "name",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "company": {
           "name": "company",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "email": {
           "name": "email",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "phone": {
           "name": "phone",
-          "type": "text",
+          "type": "varchar(50)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -195,7 +200,7 @@
         },
         "tax_id": {
           "name": "tax_id",
-          "type": "text",
+          "type": "varchar(100)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -209,39 +214,45 @@
         },
         "archived_at": {
           "name": "archived_at",
-          "type": "integer",
+          "type": "datetime",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "integer",
+          "type": "datetime",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "(unixepoch())"
+          "autoincrement": false
         }
       },
       "indexes": {},
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "customers_id": {
+          "name": "customers_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraint": {}
     },
     "invoice_line_items": {
       "name": "invoice_line_items",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "invoice_id": {
           "name": "invoice_id",
-          "type": "text",
+          "type": "varchar(36)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -255,28 +266,28 @@
         },
         "quantity": {
           "name": "quantity",
-          "type": "real",
+          "type": "double",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "rate_kobo": {
           "name": "rate_kobo",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "line_total_kobo": {
           "name": "line_total_kobo",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "sort_order": {
           "name": "sort_order",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -299,37 +310,145 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "invoice_line_items_id": {
+          "name": "invoice_line_items_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraint": {}
     },
-    "invoices": {
-      "name": "invoices",
+    "invoice_run_logs": {
+      "name": "invoice_run_logs",
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": true
         },
-        "invoice_number": {
-          "name": "invoice_number",
-          "type": "text",
+        "recurring_invoice_id": {
+          "name": "recurring_invoice_id",
+          "type": "varchar(36)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "customer_id": {
-          "name": "customer_id",
-          "type": "text",
+        "invoice_id": {
+          "name": "invoice_id",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "run_at": {
+          "name": "run_at",
+          "type": "datetime",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "status": {
           "name": "status",
+          "type": "enum('success','failed')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "stage": {
+          "name": "stage",
+          "type": "enum('invoice','pdf','email')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "error_message": {
+          "name": "error_message",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "attempt": {
+          "name": "attempt",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "invoice_run_logs_recurring_invoice_id_recurring_invoices_id_fk": {
+          "name": "invoice_run_logs_recurring_invoice_id_recurring_invoices_id_fk",
+          "tableFrom": "invoice_run_logs",
+          "tableTo": "recurring_invoices",
+          "columnsFrom": [
+            "recurring_invoice_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "invoice_run_logs_invoice_id_invoices_id_fk": {
+          "name": "invoice_run_logs_invoice_id_invoices_id_fk",
+          "tableFrom": "invoice_run_logs",
+          "tableTo": "invoices",
+          "columnsFrom": [
+            "invoice_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "invoice_run_logs_id": {
+          "name": "invoice_run_logs_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "invoices": {
+      "name": "invoices",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "invoice_number": {
+          "name": "invoice_number",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('draft','sent','paid','overdue','failed')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -337,21 +456,21 @@
         },
         "currency": {
           "name": "currency",
-          "type": "text",
+          "type": "varchar(8)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "issue_date": {
           "name": "issue_date",
-          "type": "integer",
+          "type": "datetime",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "due_date": {
           "name": "due_date",
-          "type": "integer",
+          "type": "datetime",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -365,14 +484,14 @@
         },
         "subtotal_kobo": {
           "name": "subtotal_kobo",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "discount_kobo": {
           "name": "discount_kobo",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -380,7 +499,7 @@
         },
         "tax_rate_percent": {
           "name": "tax_rate_percent",
-          "type": "real",
+          "type": "double",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -388,7 +507,7 @@
         },
         "tax_kobo": {
           "name": "tax_kobo",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -396,28 +515,28 @@
         },
         "total_due_kobo": {
           "name": "total_due_kobo",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "billed_to_name": {
           "name": "billed_to_name",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "billed_to_email": {
           "name": "billed_to_email",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "business_name_snapshot": {
           "name": "business_name_snapshot",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -431,58 +550,55 @@
         },
         "business_phone_snapshot": {
           "name": "business_phone_snapshot",
-          "type": "text",
+          "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "payee_name_snapshot": {
           "name": "payee_name_snapshot",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "bank_name_snapshot": {
           "name": "bank_name_snapshot",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "account_number_snapshot": {
           "name": "account_number_snapshot",
-          "type": "text",
+          "type": "varchar(64)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
+        "recurring_invoice_id": {
+          "name": "recurring_invoice_id",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "created_at": {
           "name": "created_at",
-          "type": "integer",
+          "type": "datetime",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "(unixepoch())"
+          "autoincrement": false
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "integer",
+          "type": "datetime",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "(unixepoch())"
+          "autoincrement": false
         }
       },
-      "indexes": {
-        "invoices_invoice_number_unique": {
-          "name": "invoices_invoice_number_unique",
-          "columns": [
-            "invoice_number"
-          ],
-          "isUnique": true
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "invoices_customer_id_customers_id_fk": {
           "name": "invoices_customer_id_customers_id_fk",
@@ -496,21 +612,302 @@
           ],
           "onDelete": "restrict",
           "onUpdate": "no action"
+        },
+        "invoices_recurring_invoice_id_recurring_invoices_id_fk": {
+          "name": "invoices_recurring_invoice_id_recurring_invoices_id_fk",
+          "tableFrom": "invoices",
+          "tableTo": "recurring_invoices",
+          "columnsFrom": [
+            "recurring_invoice_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "invoices_id": {
+          "name": "invoices_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "invoices_invoice_number_unique": {
+          "name": "invoices_invoice_number_unique",
+          "columns": [
+            "invoice_number"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    },
+    "recurring_invoice_line_items": {
+      "name": "recurring_invoice_line_items",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "recurring_invoice_id": {
+          "name": "recurring_invoice_id",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "double",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rate_kobo": {
+          "name": "rate_kobo",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "recurring_invoice_line_items_recurring_invoice_id_recurring_invoices_id_fk": {
+          "name": "recurring_invoice_line_items_recurring_invoice_id_recurring_invoices_id_fk",
+          "tableFrom": "recurring_invoice_line_items",
+          "tableTo": "recurring_invoices",
+          "columnsFrom": [
+            "recurring_invoice_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "recurring_invoice_line_items_id": {
+          "name": "recurring_invoice_line_items_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraint": {}
+    },
+    "recurring_invoices": {
+      "name": "recurring_invoices",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "discount_kobo": {
+          "name": "discount_kobo",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "tax_rate_percent": {
+          "name": "tax_rate_percent",
+          "type": "double",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "comments": {
+          "name": "comments",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "frequency": {
+          "name": "frequency",
+          "type": "enum('daily','weekly','biweekly','monthly','quarterly','yearly','custom')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "custom_interval_days": {
+          "name": "custom_interval_days",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "due_in_days": {
+          "name": "due_in_days",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "datetime",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "datetime",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'UTC'"
+        },
+        "auto_send_email": {
+          "name": "auto_send_email",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "auto_generate_pdf": {
+          "name": "auto_generate_pdf",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('active','paused','ended')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'active'"
+        },
+        "next_run_at": {
+          "name": "next_run_at",
+          "type": "datetime",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_run_at": {
+          "name": "last_run_at",
+          "type": "datetime",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "attempt_count": {
+          "name": "attempt_count",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "occurrence_count": {
+          "name": "occurrence_count",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "datetime",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "datetime",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "recurring_invoices_customer_id_customers_id_fk": {
+          "name": "recurring_invoices_customer_id_customers_id_fk",
+          "tableFrom": "recurring_invoices",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "recurring_invoices_id": {
+          "name": "recurring_invoices_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
     }
   },
   "views": {},
-  "enums": {},
   "_meta": {
     "schemas": {},
     "tables": {},
     "columns": {}
   },
   "internal": {
+    "tables": {},
     "indexes": {}
   }
 }

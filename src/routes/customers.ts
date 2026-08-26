@@ -13,26 +13,26 @@ import { customerSchema } from "../validation/invoice"
 
 export const customerRoutes = new Hono()
 
-customerRoutes.get("/", (c) => c.json(listCustomers()))
+customerRoutes.get("/", async (c) => c.json(await listCustomers()))
 
-customerRoutes.get("/search", (c) => {
+customerRoutes.get("/search", async (c) => {
   const query = c.req.query("query") || undefined
   const includeArchived = c.req.query("includeArchived") === "true"
-  return c.json(searchCustomers({ query, includeArchived }))
+  return c.json(await searchCustomers({ query, includeArchived }))
 })
 
-customerRoutes.get("/:id", (c) => c.json(getCustomerById(c.req.param("id"))))
+customerRoutes.get("/:id", async (c) => c.json(await getCustomerById(c.req.param("id"))))
 
 customerRoutes.post("/", async (c) => {
   const body = customerSchema.parse(await c.req.json())
-  return c.json(createCustomer(body), 201)
+  return c.json(await createCustomer(body), 201)
 })
 
 customerRoutes.put("/:id", async (c) => {
   const body = customerSchema.parse(await c.req.json())
-  return c.json(updateCustomer(c.req.param("id"), body))
+  return c.json(await updateCustomer(c.req.param("id"), body))
 })
 
-customerRoutes.post("/:id/archive", (c) => c.json(archiveCustomer(c.req.param("id"))))
-customerRoutes.post("/:id/unarchive", (c) => c.json(unarchiveCustomer(c.req.param("id"))))
-customerRoutes.delete("/:id", (c) => c.json(deleteCustomer(c.req.param("id"))))
+customerRoutes.post("/:id/archive", async (c) => c.json(await archiveCustomer(c.req.param("id"))))
+customerRoutes.post("/:id/unarchive", async (c) => c.json(await unarchiveCustomer(c.req.param("id"))))
+customerRoutes.delete("/:id", async (c) => c.json(await deleteCustomer(c.req.param("id"))))

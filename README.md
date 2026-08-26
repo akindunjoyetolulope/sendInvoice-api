@@ -1,12 +1,17 @@
 # sendInvoice-api
 
-Standalone backend for the SendInvoice app — a Hono HTTP API backed by SQLite (via Drizzle ORM). Owns the database, invoice/customer business logic, PDF generation, email sending, and the recurring-invoice scheduler.
+Standalone backend for the SendInvoice app — a Hono HTTP API backed by MySQL (via Drizzle ORM). Owns the database, invoice/customer business logic, PDF generation, email sending, and the recurring-invoice scheduler.
 
 ## Setup
 
 ```bash
 npm install
 cp .env.example .env
+```
+
+Set `DATABASE_URL` in `.env` to a MySQL connection string (e.g. `mysql://user:password@host:port/database`). On Railway, add a MySQL database to your project and copy its connection URL in.
+
+```bash
 npm run dev
 ```
 

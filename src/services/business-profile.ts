@@ -3,18 +3,20 @@ import { db } from "../db/client"
 import { businessProfile } from "../db/schema"
 import type { BusinessProfileInput } from "../validation/invoice"
 
-export function getBusinessProfile() {
-  const existing = db.select().from(businessProfile).where(eq(businessProfile.id, 1)).get()
+export async function getBusinessProfile() {
+  const [existing] = await db.select().from(businessProfile).where(eq(businessProfile.id, 1))
   if (existing) return existing
 
-  db.insert(businessProfile).values({ id: 1 }).run()
-  return db.select().from(businessProfile).where(eq(businessProfile.id, 1)).get()!
+  await db.insert(businessProfile).values({ id: 1 })
+  const [created] = await db.select().from(businessProfile).where(eq(businessProfile.id, 1))
+  return created!
 }
 
-export function saveBusinessProfile(data: BusinessProfileInput) {
-  db.insert(businessProfile)
+export async function saveBusinessProfile(data: BusinessProfileInput) {
+  await db
+    .insert(businessProfile)
     .values({ id: 1, ...data })
-    .onConflictDoUpdate({ target: businessProfile.id, set: data })
-    .run()
-  return db.select().from(businessProfile).where(eq(businessProfile.id, 1)).get()!
+    .onDuplicateKeyUpdate({ set: data })
+  const [updated] = await db.select().from(businessProfile).where(eq(businessProfile.id, 1))
+  return updated!
 }
