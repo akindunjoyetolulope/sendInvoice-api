@@ -1,0 +1,1 @@
+ALTER TABLE `recurring_invoices` ADD `occurrence_count` integer DEFAULT 0 NOT NULL;
