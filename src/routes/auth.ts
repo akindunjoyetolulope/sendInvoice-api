@@ -9,6 +9,20 @@ export const authRoutes = new Hono()
 
 const googleLoginSchema = z.object({ credential: z.string().min(1) })
 
+// In production the frontend (Vercel) and this API (Railway) are on different
+// domains, so the session cookie is cross-site from the browser's point of
+// view. Cross-site cookies require SameSite=None, and browsers only honor
+// SameSite=None when Secure is also set. Locally, frontend and backend are
+// both "localhost" (same-site — cookies ignore port), so Lax works and
+// Secure isn't needed since there's no HTTPS in dev.
+const isProduction = process.env.NODE_ENV === "production"
+const sessionCookieOptions = {
+  httpOnly: true,
+  sameSite: isProduction ? ("None" as const) : ("Lax" as const),
+  secure: isProduction,
+  path: "/",
+}
+
 authRoutes.post("/google", async (c) => {
   const { credential } = googleLoginSchema.parse(await c.req.json())
   const profile = await verifyGoogleIdToken(credential)
@@ -19,19 +33,13 @@ authRoutes.post("/google", async (c) => {
     process.env.SESSION_SECRET!,
   )
 
-  setCookie(c, SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "Lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: SESSION_TTL_SECONDS,
-  })
+  setCookie(c, SESSION_COOKIE, token, { ...sessionCookieOptions, maxAge: SESSION_TTL_SECONDS })
 
   return c.json(profile)
 })
 
 authRoutes.post("/logout", (c) => {
-  deleteCookie(c, SESSION_COOKIE, { path: "/" })
+  deleteCookie(c, SESSION_COOKIE, sessionCookieOptions)
   return c.body(null, 204)
 })
 
