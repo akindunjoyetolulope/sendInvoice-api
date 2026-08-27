@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm"
+import { and, desc, eq } from "drizzle-orm"
 import { db } from "../db/client"
 import { customers, invoiceLineItems, invoices } from "../db/schema"
 import type { CreateInvoiceInput } from "../validation/invoice"
@@ -6,7 +6,7 @@ import { createInvoiceRecord, updateInvoiceRecord } from "./invoice-core"
 import { NotFoundError } from "../lib/errors"
 import type { InvoicePdfData } from "../lib/pdf/types"
 
-export async function createInvoice(data: CreateInvoiceInput) {
+export async function createInvoice(userId: string, data: CreateInvoiceInput) {
   if (!data.customerId && !data.newCustomer) {
     throw new Error("A customer must be selected or provided")
   }
@@ -17,10 +17,11 @@ export async function createInvoice(data: CreateInvoiceInput) {
       customerId = data.customerId
     } else {
       customerId = crypto.randomUUID()
-      await tx.insert(customers).values({ id: customerId, ...data.newCustomer! })
+      await tx.insert(customers).values({ id: customerId, userId, ...data.newCustomer! })
     }
 
     const invoice = await createInvoiceRecord(tx, {
+      userId,
       customerId,
       lineItems: data.lineItems,
       discountNaira: data.discountNaira,
@@ -35,13 +36,13 @@ export async function createInvoice(data: CreateInvoiceInput) {
 
 const EDITABLE_STATUSES = ["draft", "failed"] as const
 
-export async function updateInvoice(id: string, data: CreateInvoiceInput) {
+export async function updateInvoice(userId: string, id: string, data: CreateInvoiceInput) {
   if (!data.customerId && !data.newCustomer) {
     throw new Error("A customer must be selected or provided")
   }
 
   return db.transaction(async (tx) => {
-    const [existing] = await tx.select().from(invoices).where(eq(invoices.id, id))
+    const [existing] = await tx.select().from(invoices).where(and(eq(invoices.id, id), eq(invoices.userId, userId)))
     if (!existing) throw new NotFoundError()
     if (!EDITABLE_STATUSES.includes(existing.status as (typeof EDITABLE_STATUSES)[number])) {
       throw new Error(`An invoice that's already ${existing.status} can't be edited`)
@@ -52,10 +53,11 @@ export async function updateInvoice(id: string, data: CreateInvoiceInput) {
       customerId = data.customerId
     } else {
       customerId = crypto.randomUUID()
-      await tx.insert(customers).values({ id: customerId, ...data.newCustomer! })
+      await tx.insert(customers).values({ id: customerId, userId, ...data.newCustomer! })
     }
 
     await updateInvoiceRecord(tx, id, {
+      userId,
       customerId,
       lineItems: data.lineItems,
       discountNaira: data.discountNaira,
@@ -68,18 +70,18 @@ export async function updateInvoice(id: string, data: CreateInvoiceInput) {
   })
 }
 
-export async function deleteInvoice(id: string) {
-  const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id))
+export async function deleteInvoice(userId: string, id: string) {
+  const [invoice] = await db.select().from(invoices).where(and(eq(invoices.id, id), eq(invoices.userId, userId)))
   if (!invoice) throw new NotFoundError()
   if (invoice.status === "paid") {
     return { ok: false as const, reason: "paid" as const }
   }
-  await db.delete(invoices).where(eq(invoices.id, id))
+  await db.delete(invoices).where(and(eq(invoices.id, id), eq(invoices.userId, userId)))
   return { ok: true as const }
 }
 
-export async function getInvoiceById(id: string): Promise<InvoicePdfData> {
-  const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id))
+export async function getInvoiceById(userId: string, id: string): Promise<InvoicePdfData> {
+  const [invoice] = await db.select().from(invoices).where(and(eq(invoices.id, id), eq(invoices.userId, userId)))
   if (!invoice) throw new NotFoundError()
 
   const lineItems = await db
@@ -119,7 +121,7 @@ export async function getInvoiceById(id: string): Promise<InvoicePdfData> {
   }
 }
 
-export async function listInvoices() {
+export async function listInvoices(userId: string) {
   return db
     .select({
       id: invoices.id,
@@ -131,5 +133,6 @@ export async function listInvoices() {
       createdAt: invoices.createdAt,
     })
     .from(invoices)
+    .where(eq(invoices.userId, userId))
     .orderBy(desc(invoices.createdAt))
 }

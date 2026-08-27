@@ -1,4 +1,4 @@
-import { count, desc } from "drizzle-orm"
+import { count, desc, eq } from "drizzle-orm"
 import { db } from "../db/client"
 import { customers, invoices } from "../db/schema"
 import { getBusinessProfile } from "./business-profile"
@@ -10,11 +10,18 @@ function effectiveStatus(status: string, dueDate: Date, now: Date): EffectiveSta
   return dueDate < now ? "overdue" : "pending"
 }
 
-export async function getDashboardData() {
+export async function getDashboardData(userId: string) {
   const now = new Date()
-  const businessProfile = await getBusinessProfile()
-  const allInvoices = await db.select().from(invoices).orderBy(desc(invoices.createdAt))
-  const [{ customerCount }] = await db.select({ customerCount: count() }).from(customers)
+  const businessProfile = await getBusinessProfile(userId)
+  const allInvoices = await db
+    .select()
+    .from(invoices)
+    .where(eq(invoices.userId, userId))
+    .orderBy(desc(invoices.createdAt))
+  const [{ customerCount }] = await db
+    .select({ customerCount: count() })
+    .from(customers)
+    .where(eq(customers.userId, userId))
 
   let totalRevenueKobo = 0
   let paidCount = 0

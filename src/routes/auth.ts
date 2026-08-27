@@ -2,7 +2,7 @@ import { Hono } from "hono"
 import { deleteCookie, getCookie, setCookie } from "hono/cookie"
 import { sign, verify } from "hono/jwt"
 import { z } from "zod"
-import { verifyGoogleIdToken } from "../services/auth"
+import { findOrCreateUser, verifyGoogleIdToken } from "../services/auth"
 import { SESSION_COOKIE, SESSION_TTL_SECONDS } from "../lib/session"
 
 export const authRoutes = new Hono()
@@ -26,16 +26,17 @@ const sessionCookieOptions = {
 authRoutes.post("/google", async (c) => {
   const { credential } = googleLoginSchema.parse(await c.req.json())
   const profile = await verifyGoogleIdToken(credential)
+  const user = await findOrCreateUser(profile)
 
   const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS
   const token = await sign(
-    { email: profile.email, name: profile.name, picture: profile.picture, exp },
+    { id: user.id, email: user.email, name: user.name, picture: user.picture, exp },
     process.env.SESSION_SECRET!,
   )
 
   setCookie(c, SESSION_COOKIE, token, { ...sessionCookieOptions, maxAge: SESSION_TTL_SECONDS })
 
-  return c.json(profile)
+  return c.json(user)
 })
 
 authRoutes.post("/logout", (c) => {
@@ -49,7 +50,7 @@ authRoutes.get("/me", async (c) => {
 
   try {
     const payload = await verify(token, process.env.SESSION_SECRET!, "HS256")
-    return c.json({ email: payload.email, name: payload.name, picture: payload.picture })
+    return c.json({ id: payload.id, email: payload.email, name: payload.name, picture: payload.picture })
   } catch {
     return c.json({ error: "Unauthorized" }, 401)
   }

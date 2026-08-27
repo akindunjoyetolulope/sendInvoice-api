@@ -49,6 +49,7 @@ export async function runRecurringInvoiceOccurrence(recurringInvoiceId: string) 
   try {
     const invoice = await db.transaction(async (tx) =>
       createInvoiceRecord(tx, {
+        userId: recurringInvoice.userId,
         customerId: recurringInvoice.customerId,
         lineItems: lineItems.map((item) => ({
           description: item.description,
@@ -66,7 +67,7 @@ export async function runRecurringInvoiceOccurrence(recurringInvoiceId: string) 
     await logRun({ recurringInvoiceId, invoiceId, status: "success", stage: "invoice", attempt })
 
     if (recurringInvoice.autoGeneratePdf || recurringInvoice.autoSendEmail) {
-      const { data: pdfData, pdfBuffer } = await renderInvoicePdfBuffer(invoice.id)
+      const { data: pdfData, pdfBuffer } = await renderInvoicePdfBuffer(recurringInvoice.userId, invoice.id)
       await logRun({ recurringInvoiceId, invoiceId, status: "success", stage: "pdf", attempt })
 
       if (recurringInvoice.autoSendEmail) {

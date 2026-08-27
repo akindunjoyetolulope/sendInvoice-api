@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import type { db as dbType } from "../db/client"
 import { businessProfile, customers, invoiceLineItems, invoices } from "../db/schema"
 import { toKobo } from "../lib/format/money"
@@ -12,6 +12,7 @@ export interface InvoiceLineItemInput {
 }
 
 export interface CreateInvoiceRecordInput {
+  userId: string
   customerId: string
   lineItems: InvoiceLineItemInput[]
   discountNaira: number
@@ -52,10 +53,13 @@ function businessAddressLine(profile: typeof businessProfile.$inferSelect) {
 }
 
 export async function createInvoiceRecord(tx: Tx, input: CreateInvoiceRecordInput) {
-  const [profile] = await tx.select().from(businessProfile).where(eq(businessProfile.id, 1))
+  const [profile] = await tx.select().from(businessProfile).where(eq(businessProfile.userId, input.userId))
   if (!profile) throw new Error("Business profile has not been set up yet")
 
-  const [customer] = await tx.select().from(customers).where(eq(customers.id, input.customerId))
+  const [customer] = await tx
+    .select()
+    .from(customers)
+    .where(and(eq(customers.id, input.customerId), eq(customers.userId, input.userId)))
   if (!customer) throw new Error("Customer not found")
 
   const { lineItems, subtotalKobo, discountKobo, taxKobo, totalDueKobo } = computeLineItemsAndTotals(
@@ -68,12 +72,13 @@ export async function createInvoiceRecord(tx: Tx, input: CreateInvoiceRecordInpu
   await tx
     .update(businessProfile)
     .set({ nextInvoiceNumber: profile.nextInvoiceNumber + 1 })
-    .where(eq(businessProfile.id, 1))
+    .where(eq(businessProfile.userId, input.userId))
 
   const issueDate = new Date()
   const id = crypto.randomUUID()
   await tx.insert(invoices).values({
     id,
+    userId: input.userId,
     invoiceNumber,
     customerId: customer.id,
     currency: profile.currency,
@@ -109,6 +114,7 @@ export async function createInvoiceRecord(tx: Tx, input: CreateInvoiceRecordInpu
 }
 
 export interface UpdateInvoiceRecordInput {
+  userId: string
   customerId: string
   lineItems: InvoiceLineItemInput[]
   discountNaira: number
@@ -119,10 +125,13 @@ export interface UpdateInvoiceRecordInput {
 
 /** Only for draft/failed invoices — re-snapshots business & customer details since nothing's been delivered yet. */
 export async function updateInvoiceRecord(tx: Tx, invoiceId: string, input: UpdateInvoiceRecordInput) {
-  const [profile] = await tx.select().from(businessProfile).where(eq(businessProfile.id, 1))
+  const [profile] = await tx.select().from(businessProfile).where(eq(businessProfile.userId, input.userId))
   if (!profile) throw new Error("Business profile has not been set up yet")
 
-  const [customer] = await tx.select().from(customers).where(eq(customers.id, input.customerId))
+  const [customer] = await tx
+    .select()
+    .from(customers)
+    .where(and(eq(customers.id, input.customerId), eq(customers.userId, input.userId)))
   if (!customer) throw new Error("Customer not found")
 
   const { lineItems, subtotalKobo, discountKobo, taxKobo, totalDueKobo } = computeLineItemsAndTotals(
@@ -151,7 +160,7 @@ export async function updateInvoiceRecord(tx: Tx, invoiceId: string, input: Upda
       bankNameSnapshot: profile.bankName,
       accountNumberSnapshot: profile.accountNumber,
     })
-    .where(eq(invoices.id, invoiceId))
+    .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, input.userId)))
   const [invoice] = await tx.select().from(invoices).where(eq(invoices.id, invoiceId))
 
   await tx.delete(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invoiceId))

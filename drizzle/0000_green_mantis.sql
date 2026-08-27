@@ -1,5 +1,5 @@
 CREATE TABLE `business_profile` (
-	`id` int NOT NULL DEFAULT 1,
+	`user_id` varchar(36) NOT NULL,
 	`business_name` varchar(255) NOT NULL DEFAULT '',
 	`email` varchar(255) NOT NULL DEFAULT '',
 	`phone` varchar(50) NOT NULL DEFAULT '',
@@ -15,11 +15,12 @@ CREATE TABLE `business_profile` (
 	`next_invoice_number` int NOT NULL DEFAULT 1,
 	`created_at` datetime NOT NULL,
 	`updated_at` datetime NOT NULL,
-	CONSTRAINT `business_profile_id` PRIMARY KEY(`id`)
+	CONSTRAINT `business_profile_user_id` PRIMARY KEY(`user_id`)
 );
 --> statement-breakpoint
 CREATE TABLE `customers` (
 	`id` varchar(36) NOT NULL,
+	`user_id` varchar(36) NOT NULL,
 	`name` varchar(255) NOT NULL,
 	`company` varchar(255),
 	`email` varchar(255) NOT NULL,
@@ -58,6 +59,7 @@ CREATE TABLE `invoice_run_logs` (
 --> statement-breakpoint
 CREATE TABLE `invoices` (
 	`id` varchar(36) NOT NULL,
+	`user_id` varchar(36) NOT NULL,
 	`invoice_number` varchar(64) NOT NULL,
 	`customer_id` varchar(36) NOT NULL,
 	`status` enum('draft','sent','paid','overdue','failed') NOT NULL DEFAULT 'draft',
@@ -82,7 +84,7 @@ CREATE TABLE `invoices` (
 	`created_at` datetime NOT NULL,
 	`updated_at` datetime NOT NULL,
 	CONSTRAINT `invoices_id` PRIMARY KEY(`id`),
-	CONSTRAINT `invoices_invoice_number_unique` UNIQUE(`invoice_number`)
+	CONSTRAINT `invoices_user_invoice_number_unique` UNIQUE(`user_id`,`invoice_number`)
 );
 --> statement-breakpoint
 CREATE TABLE `recurring_invoice_line_items` (
@@ -97,6 +99,7 @@ CREATE TABLE `recurring_invoice_line_items` (
 --> statement-breakpoint
 CREATE TABLE `recurring_invoices` (
 	`id` varchar(36) NOT NULL,
+	`user_id` varchar(36) NOT NULL,
 	`customer_id` varchar(36) NOT NULL,
 	`discount_kobo` bigint NOT NULL DEFAULT 0,
 	`tax_rate_percent` double NOT NULL DEFAULT 0,
@@ -119,10 +122,24 @@ CREATE TABLE `recurring_invoices` (
 	CONSTRAINT `recurring_invoices_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
+CREATE TABLE `users` (
+	`id` varchar(36) NOT NULL,
+	`email` varchar(255) NOT NULL,
+	`name` varchar(255),
+	`picture` varchar(512),
+	`created_at` datetime NOT NULL,
+	CONSTRAINT `users_id` PRIMARY KEY(`id`),
+	CONSTRAINT `users_email_unique` UNIQUE(`email`)
+);
+--> statement-breakpoint
+ALTER TABLE `business_profile` ADD CONSTRAINT `business_profile_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `customers` ADD CONSTRAINT `customers_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `invoice_line_items` ADD CONSTRAINT `invoice_line_items_invoice_id_invoices_id_fk` FOREIGN KEY (`invoice_id`) REFERENCES `invoices`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `invoice_run_logs` ADD CONSTRAINT `invoice_run_logs_recurring_invoice_id_recurring_invoices_id_fk` FOREIGN KEY (`recurring_invoice_id`) REFERENCES `recurring_invoices`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `invoice_run_logs` ADD CONSTRAINT `invoice_run_logs_invoice_id_invoices_id_fk` FOREIGN KEY (`invoice_id`) REFERENCES `invoices`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `invoices` ADD CONSTRAINT `invoices_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `invoices` ADD CONSTRAINT `invoices_customer_id_customers_id_fk` FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `invoices` ADD CONSTRAINT `invoices_recurring_invoice_id_recurring_invoices_id_fk` FOREIGN KEY (`recurring_invoice_id`) REFERENCES `recurring_invoices`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `recurring_invoice_line_items` ADD CONSTRAINT `recurring_invoice_line_items_recurring_invoice_id_recurring_invoices_id_fk` FOREIGN KEY (`recurring_invoice_id`) REFERENCES `recurring_invoices`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `recurring_invoices` ADD CONSTRAINT `recurring_invoices_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `recurring_invoices` ADD CONSTRAINT `recurring_invoices_customer_id_customers_id_fk` FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE restrict ON UPDATE no action;

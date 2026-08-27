@@ -1,19 +1,18 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "7acccf9c-82f2-492a-856b-f7131cc4bd6f",
+  "id": "82bc17fe-fb0b-4a2a-8454-70f2d4c83b82",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "business_profile": {
       "name": "business_profile",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "int",
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar(36)",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": 1
+          "autoincrement": false
         },
         "business_name": {
           "name": "business_name",
@@ -134,12 +133,26 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "business_profile_id": {
-          "name": "business_profile_id",
-          "columns": [
+      "foreignKeys": {
+        "business_profile_user_id_users_id_fk": {
+          "name": "business_profile_user_id_users_id_fk",
+          "tableFrom": "business_profile",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
             "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "business_profile_user_id": {
+          "name": "business_profile_user_id",
+          "columns": [
+            "user_id"
           ]
         }
       },
@@ -151,6 +164,13 @@
       "columns": {
         "id": {
           "name": "id",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
           "type": "varchar(36)",
           "primaryKey": false,
           "notNull": true,
@@ -228,7 +248,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "customers_user_id_users_id_fk": {
+          "name": "customers_user_id_users_id_fk",
+          "tableFrom": "customers",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {
         "customers_id": {
           "name": "customers_id",
@@ -432,6 +466,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "invoice_number": {
           "name": "invoice_number",
           "type": "varchar(64)",
@@ -600,6 +641,19 @@
       },
       "indexes": {},
       "foreignKeys": {
+        "invoices_user_id_users_id_fk": {
+          "name": "invoices_user_id_users_id_fk",
+          "tableFrom": "invoices",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "invoices_customer_id_customers_id_fk": {
           "name": "invoices_customer_id_customers_id_fk",
           "tableFrom": "invoices",
@@ -636,9 +690,10 @@
         }
       },
       "uniqueConstraints": {
-        "invoices_invoice_number_unique": {
-          "name": "invoices_invoice_number_unique",
+        "invoices_user_invoice_number_unique": {
+          "name": "invoices_user_invoice_number_unique",
           "columns": [
+            "user_id",
             "invoice_number"
           ]
         }
@@ -724,6 +779,13 @@
       "columns": {
         "id": {
           "name": "id",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
           "type": "varchar(36)",
           "primaryKey": false,
           "notNull": true,
@@ -874,6 +936,19 @@
       },
       "indexes": {},
       "foreignKeys": {
+        "recurring_invoices_user_id_users_id_fk": {
+          "name": "recurring_invoices_user_id_users_id_fk",
+          "tableFrom": "recurring_invoices",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "recurring_invoices_customer_id_customers_id_fk": {
           "name": "recurring_invoices_customer_id_customers_id_fk",
           "tableFrom": "recurring_invoices",
@@ -897,6 +972,65 @@
         }
       },
       "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "users": {
+      "name": "users",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "picture": {
+          "name": "picture",
+          "type": "varchar(512)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "datetime",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "users_id": {
+          "name": "users_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "columns": [
+            "email"
+          ]
+        }
+      },
       "checkConstraint": {}
     }
   },

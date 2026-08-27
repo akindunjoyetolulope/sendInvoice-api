@@ -2,12 +2,7 @@ import type { Context, Next } from "hono"
 import { getCookie } from "hono/cookie"
 import { verify } from "hono/jwt"
 import { SESSION_COOKIE } from "../lib/session"
-
-export interface SessionUser {
-  email: string
-  name?: string
-  picture?: string
-}
+import type { SessionUser } from "../services/auth"
 
 declare module "hono" {
   interface ContextVariableMap {
@@ -22,6 +17,7 @@ export async function requireAuth(c: Context, next: Next) {
   try {
     const payload = await verify(token, process.env.SESSION_SECRET!, "HS256")
     c.set("user", {
+      id: payload.id as string,
       email: payload.email as string,
       name: payload.name as string | undefined,
       picture: payload.picture as string | undefined,

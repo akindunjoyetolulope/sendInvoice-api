@@ -1,8 +1,33 @@
 import { relations } from "drizzle-orm"
-import { bigint, boolean, datetime, double, int, mysqlEnum, mysqlTable, text, varchar } from "drizzle-orm/mysql-core"
+import {
+  bigint,
+  boolean,
+  datetime,
+  double,
+  int,
+  mysqlEnum,
+  mysqlTable,
+  text,
+  unique,
+  varchar,
+} from "drizzle-orm/mysql-core"
+
+export const users = mysqlTable("users", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  name: varchar("name", { length: 255 }),
+  picture: varchar("picture", { length: 512 }),
+  createdAt: datetime("created_at", { mode: "date" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+})
 
 export const businessProfile = mysqlTable("business_profile", {
-  id: int("id").primaryKey().default(1),
+  userId: varchar("user_id", { length: 36 })
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
   businessName: varchar("business_name", { length: 255 }).notNull().default(""),
   email: varchar("email", { length: 255 }).notNull().default(""),
   phone: varchar("phone", { length: 50 }).notNull().default(""),
@@ -29,6 +54,9 @@ export const customers = mysqlTable("customers", {
   id: varchar("id", { length: 36 })
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
   company: varchar("company", { length: 255 }),
   email: varchar("email", { length: 255 }).notNull(),
@@ -46,11 +74,16 @@ export const customers = mysqlTable("customers", {
 export const invoiceStatusValues = ["draft", "sent", "paid", "overdue", "failed"] as const
 export type InvoiceStatus = (typeof invoiceStatusValues)[number]
 
-export const invoices = mysqlTable("invoices", {
+export const invoices = mysqlTable(
+  "invoices",
+  {
   id: varchar("id", { length: 36 })
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  invoiceNumber: varchar("invoice_number", { length: 64 }).notNull().unique(),
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  invoiceNumber: varchar("invoice_number", { length: 64 }).notNull(),
   customerId: varchar("customer_id", { length: 36 })
     .notNull()
     .references(() => customers.id, { onDelete: "restrict" }),
@@ -83,7 +116,9 @@ export const invoices = mysqlTable("invoices", {
     .notNull()
     .$defaultFn(() => new Date())
     .$onUpdate(() => new Date()),
-})
+  },
+  (table) => [unique("invoices_user_invoice_number_unique").on(table.userId, table.invoiceNumber)],
+)
 
 export const invoiceLineItems = mysqlTable("invoice_line_items", {
   id: int("id").autoincrement().primaryKey(),
@@ -115,6 +150,9 @@ export const recurringInvoices = mysqlTable("recurring_invoices", {
   id: varchar("id", { length: 36 })
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   customerId: varchar("customer_id", { length: 36 })
     .notNull()
     .references(() => customers.id, { onDelete: "restrict" }),
